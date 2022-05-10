@@ -16,13 +16,14 @@ from datetime import datetime
 import os
 
 # local
-from .client import MovieClient
+from .client import CoinClient, MovieClient
 
 
 db = MongoEngine()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
 movie_client = MovieClient(os.environ.get("OMDB_API_KEY"))
+coin_client = CoinClient()
 
 #from .routes import main
 from .users.routes import users

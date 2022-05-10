@@ -27,7 +27,7 @@ import io
 import base64
 
 # local
-from . import bcrypt, movie_client
+from . import bcrypt, movie_client, coin_client
 from .forms import (
     SearchForm,
     MovieReviewForm,
@@ -48,17 +48,18 @@ main = Blueprint("main", __name__)
 @main.route("/", methods=["GET", "POST"])
 def index():
     form = SearchForm()
-
     if form.validate_on_submit():
-        return redirect(url_for("main.query_results", query=form.search_query.data))
-
+        try:
+            results = coin_client.displayAllCoins(form.search_query.data)
+            return render_template("query.html", results=results)
+        except ValueError as e: 
+            flash(str(e))
     return render_template("index.html", form=form)
-
 
 @main.route("/search-results/<query>", methods=["GET"])
 def query_results(query):
     try:
-        results = movie_client.search(query)
+        results = movie_client.search(query) 
     except ValueError as e:
         flash(str(e))
         return redirect(url_for("main.index"))
@@ -69,29 +70,12 @@ def query_results(query):
 @main.route("/movies/<movie_id>", methods=["GET", "POST"])
 def movie_detail(movie_id):
     try:
-        result = movie_client.retrieve_movie_by_id(movie_id)
+        result = coin_client.getCoin(movie_id)
     except ValueError as e:
         flash(str(e))
-        return redirect(url_for("main.login"))
+        return redirect(url_for("users.login"))
 
-    form = MovieReviewForm()
-    if form.validate_on_submit() and current_user.is_authenticated:
-        review = Review(
-            commenter=current_user._get_current_object(),
-            content=form.text.data,
-            date=current_time(),
-            imdb_id=movie_id,
-            movie_title=result.title,
-        )
-        review.save()
-
-        return redirect(request.path)
-
-    reviews = Review.objects(imdb_id=movie_id)
-
-    return render_template(
-        "movie_detail.html", form=form, movie=result, reviews=reviews
-    )
+    return render_template("movie_detail.html", coin=result)
 
 
 @main.route("/user/<username>")

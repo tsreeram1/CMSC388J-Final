@@ -93,6 +93,69 @@ class MovieClient(object):
         return movie
 
 
+class Coin(object):
+    def __init__(self, coin_json, detailed=False):
+        if detailed:
+            self.marketCapRank = coin_json["market_cap_rank"]
+            self.description = coin_json["description"]['en']
+            self.price = coin_json['market_data']['current_price']['usd']
+
+        self.id = coin_json['id']
+        self.symbol = coin_json['symbol']
+        self.name = coin_json['name']
+        if detailed:
+            self.icon = coin_json['image']['large']
+        else: 
+            self.icon = coin_json['image']
+        
+
+    def __repr__(self):
+        return self.id
+
+
+class CoinClient():
+    def __init__(self):
+        self.sess = requests.Session()
+        self.base_url = 'https://api.coingecko.com/api/v3/'
+
+    
+    # We can offer to reduce the number of coins being shown - as the search field!
+    def displayAllCoins(self, search_val):
+        """
+        Displays all the coins that are available
+        """
+        searchVal = str(search_val)
+        search_url = f"https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={searchVal}&page=1&sparkline=false"
+
+        resp = self.sess.get(search_url)
+
+        if resp.status_code != 200:
+            raise ValueError(
+                "Search request failed; make sure your API key is correct and authorized"
+            )
+
+        data = resp.json()
+        result = []
+        for item_json in data:
+            result.append(Coin(item_json))
+
+        return result
+
+    def getCoin(self, coin_id):
+        searchVal = str(coin_id)
+        search_url = f'https://api.coingecko.com/api/v3/coins/{searchVal}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false'
+        
+        resp = self.sess.get(search_url)
+
+        if resp.status_code != 200:
+            raise ValueError(
+                "Search request failed; make sure your API key is correct and authorized"
+            )
+
+        data = resp.json()
+        result = Coin(data, True)
+        return result
+
 ## -- Example usage -- ###
 if __name__ == "__main__":
     import os
@@ -105,3 +168,4 @@ if __name__ == "__main__":
         print(movie)
 
     print(len(movies))
+
